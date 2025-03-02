@@ -8,6 +8,7 @@ type Task struct {
 	AssignedTo  string `json:"assigned_to" bson:"assigned_to"`
 	CreatedAt   int64  `json:"created_at" bson:"created_at"`
 	DueDate     int64  `json:"due_date" bson:"due_date"`
+	CreateBy    string `json:"created_by" bson:"created_by"`
 }
 
 type TaskStatus string

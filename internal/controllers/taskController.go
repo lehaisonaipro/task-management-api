@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lehaisonaipro/task-management-api/internal/models"
@@ -41,12 +42,42 @@ func (ctrl *TaskController) GetAssignedTasks(c *gin.Context) {
 }
 
 func (ctrl *TaskController) GetAllTasks(c *gin.Context) {
-	filters := make(map[string]interface{})
-	// Add filtering logic based on query params
-	tasks, err := ctrl.service.GetAllTasks(filters)
+
+	filters := make(map[string]string)
+	sorts := make(map[string]int)
+	// Extract filters from query parameters
+	if assignedTo := c.Query("assigned_to"); assignedTo != "" {
+		filters["assigned_to"] = strings.Trim(assignedTo, `"`) // Remove quotes
+	}
+	if status := c.Query("status"); status != "" {
+		filters["status"] = strings.Trim(status, `"`) // Remove quotes
+	}
+
+	// Extract sorting options
+	if sortDateType := c.Query("sort_date_type"); sortDateType != "" {
+		sortOrder := 1 // Default to ascending
+		if c.Query("sort_date_asc") == "false" {
+			sortOrder = -1 // Descending order
+		}
+		sorts[strings.Trim(sortDateType, `"`)] = sortOrder
+	}
+
+	if c.Query("sort_by_status") == "true" {
+		sortOrder := 1
+		if c.Query("sort_by_status_asc") == "false" {
+			sortOrder = -1
+		}
+		sorts["status"] = sortOrder
+	}
+
+	tasks, err := ctrl.service.GetAllTasks(filters, sorts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
 		return
 	}
 	c.JSON(http.StatusOK, tasks)
+}
+
+func (ctrl *TaskController) GetTaskSummary(c *gin.Context) {
+
 }

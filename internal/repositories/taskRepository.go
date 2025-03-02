@@ -11,7 +11,8 @@ import (
 
 type ITaskRepository interface {
 	CreateTask(task *models.Task) error
-	GetTastk(taskID string) (*models.Task, error)
+	GetTask(taskID string) (*models.Task, error)
+	AssignTask(taskID string, employee string) error
 	UpdateTaskStatus(taskID string, status models.TaskStatus) error
 	ViewTasks(employeeID string, status string, sortDateType string, sortDateAsc bool, sortTastStaus bool, stortTastAsc bool) ([]*models.Task, error)
 	TaskSummaryByEmployee(employeeID string) ([]*models.TaskSummary, error)
@@ -22,9 +23,44 @@ type TaskRepository struct {
 	collection *mongo.Collection
 }
 
+// AssignTask implements ITaskRepository.
+func (repo *TaskRepository) AssignTask(taskID string, employee string) error {
+	// Define filter to find the task by its ID
+	filter := bson.M{"_id": taskID}
+
+	// Define the update operation to set the assigned employee
+	update := bson.M{"$set": bson.M{"assigned_to": employee}}
+
+	// Execute the update operation
+	result, err := repo.collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	// Check if the task was found and updated
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments // No task found with the given ID
+	}
+	return nil
+}
+
 // GetTastk implements ITaskRepository.
-func (repo *TaskRepository) GetTastk(taskID string) (*models.Task, error) {
-	panic("unimplemented")
+func (repo *TaskRepository) GetTask(taskID string) (*models.Task, error) {
+	var task models.Task
+
+	// Define filter to find the task by its ID
+	filter := bson.M{"_id": taskID}
+
+	// Query the collection
+	err := repo.collection.FindOne(context.Background(), filter).Decode(&task)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil // No task found
+		}
+		return nil, err
+	}
+
+	return &task, nil
 }
 
 // Return total number of tasks, pending tasks, tasks in progress, and completed tasks
