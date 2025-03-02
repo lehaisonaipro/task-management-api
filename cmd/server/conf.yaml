@@ -1,0 +1,7 @@
+server:
+  port: 8080
+database:
+  mongodb:
+    uri: "mongodb://localhost:27017"
+    database: "task_management"
+    collection: "tasks"
